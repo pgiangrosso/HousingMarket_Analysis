@@ -1,0 +1,222 @@
+-- Jacksonville Housing Market Feb.2018 - Feb.2023--
+-- Purpose: Generate insights into Jacksonville Housing Market with data from Redfin 
+-- Data was cleaned and prepared in Google Sheets, prior to downloading into PostgreSQL
+
+
+--Creating Table 1: home_specs--
+DROP TABLE IF EXISTS home_specs;
+
+CREATE TABLE home_specs 
+    (
+	homeID serial primary key NOT NULL,
+    sold_date date,
+    property_type varchar(50),	
+    address varchar(50),
+    city varchar(50),	
+    state varchar(5),
+    zip	int,
+    beds float,
+    baths float,
+    location varchar(50),
+    lot_size int,	
+    year_built smallint, 
+    status varchar(5),	
+    latitude float,	
+    longitude float
+	)
+;
+
+-- Creating Table 2: home_financials -- 
+DROP TABLE IF EXISTS home_financials;
+
+CREATE TABLE home_financials 
+	(
+	homeID serial primary key NOT NULL,
+	sale_price int,
+	square_feet int, 
+	price_per_square_feet int,
+	square_footage_price int, 	
+	sale_price_sqft_price_ratio decimal(1,4)
+	)
+;
+
+--Table 2 failed to upload in PostgreSQL.--
+ALTER TABLE home_financials
+ALTER COLUMN sale_price_sqft_price_ratio SET DATA TYPE numeric(6,4)
+;
+
+--Successfully uploaded csv files for analysis-- 
+:)
+
+#####
+#####
+--Display of understanding of basic SQL concepts-- 
+--Commands are capitialized to display examples-- 
+#####
+#####
+
+--SELECT statement + LIMIT statement example-- 
+SELECT 
+    homeid, 
+    location, 
+    sold_date, 
+    year_built
+from 
+	home_specs
+LIMIT 20
+;
+
+--WHERE + AND statement example --
+select 
+    homeid, 
+    location, 
+    sold_date, 
+    year_built
+from 
+	home_specs
+WHERE 
+	year_built > 2000 
+    AND year_built < 2010
+limit 20
+;
+
+--Aliasing example-- 
+select 
+    homeid, 
+    location AS area_of_town, 
+    sold_date, 
+    year_built
+from 
+	home_specs AS hs
+where 
+	year_built > 2000
+limit 20
+;
+
+--INNER JOIN with another table + EXTRACT statement + NULL statement example--
+select 
+    homeid, 
+    EXTRACT(YEAR FROM sold_date) AS sold_year, 
+    year_built, 
+    sale_price
+from 
+	home_specs as hs
+INNER JOIN 
+	home_financials as hf
+		USING (homeid)
+WHERE 
+	sold_date IS NOT NULL	
+limit 20
+;
+
+--GROUP BY statement + ORDER BY statement example-- 
+select 
+    homeid, 
+    extract(year from sold_date) AS sold_year, 
+    year_built, 
+    sale_price
+from 
+	home_specs as hs
+inner join 
+	home_financials as hf
+		using (homeid)
+where 
+	sold_date is not null	
+GROUP BY 
+	homeid, 
+	sold_date, 
+	year_built, 
+	sale_price
+ORDER BY 
+	year_built 
+limit 20
+;
+
+--CASE STATEMENT example--
+select 
+    homeid, 
+    extract(year from sold_date) AS sold_year, 
+    year_built, 
+	CASE 
+		WHEN year_built <= 1924 THEN 'Greatest-Generation Build'
+		WHEN year_built >= 1925 AND year_built <= 1945 THEN 'Silent-Generation Build'
+		WHEN year_built >= 1946 AND year_built <= 1964 THEN 'Baby-Boomer Generation Build'
+		WHEN year_built >= 1965 AND year_built <= 1979 THEN 'Generation X Build'
+		WHEN year_built >= 1980 AND year_built <= 1994 THEN 'Millinneals Build'
+		WHEN year_built >= 1995 AND year_built <= 2012 THEN 'Generation Z Build'
+		ELSE 'Generation Alpha build'
+	END AS gen_build,
+    sale_price
+from 
+	home_specs as hs
+inner join home_financials as hf
+	using (homeid)
+where 
+	sold_date IS NOT NULL AND year_built IS NOT NULL
+GROUP BY 
+	homeid, 
+	sold_date, 
+	year_built, 
+	sale_price
+ORDER BY 
+	year_built 
+limit 20
+;
+
+--CTE + COUNT statement + IN statement example--
+WITH build_type AS 
+	(	
+		select 
+			homeid, 
+			extract(year from sold_date) AS sold_year, 
+			year_built, 
+			CASE 
+				WHEN year_built <= 1924 THEN 'Greatest-Generation Build'
+				WHEN year_built >= 1925 AND year_built <= 1945 THEN 'Silent-Generation Build'
+				WHEN year_built >= 1946 AND year_built <= 1964 THEN 'Baby-Boomer Generation Build'
+				WHEN year_built >= 1965 AND year_built <= 1979 THEN 'Generation X Build'
+				WHEN year_built >= 1980 AND year_built <= 1994 THEN 'Millinneals Build'
+				WHEN year_built >= 1995 AND year_built <= 2012 THEN 'Generation Z Build'
+				ELSE 'Generation Alpha build'
+			END AS gen_build
+		from 
+			home_specs as hs
+		inner join home_financials as hf
+			using (homeid)
+		where 
+			sold_date IS NOT NULL 
+			AND year_built IS NOT NULL	
+		GROUP BY 
+			homeid, 
+			sold_date, 
+			year_built
+		ORDER BY 
+			year_built 
+	)
+
+select 
+	gen_build, 
+	COUNT(gen_build) as ct_of_build
+from 
+	build_type 
+where 
+	gen_build IN ('Baby-Boomer Generation Build', 'Generation Z Build')
+group by 
+	gen_build
+order by 
+	COUNT(gen_build)
+;
+
+-- AVG + MAX + MIN + ROUND statements example-- 
+select  
+	ROUND(AVG(hs.year_built)) as avg_built_yr,
+	ROUND(AVG(hf.sale_price)) as avg_sale_price,
+	MAX(hf.sale_price) as most_expensive_sale,
+	MIN(hf.sale_price) as cheapest_sale, 
+	MAX(hs.year_built) as year_of_newest_building,  
+ 	MIN(hs.year_built) as year_of_oldest_builting_age
+from 
+	home_specs as hs
+inner join home_financials as hf
+	using (homeid)
+;
