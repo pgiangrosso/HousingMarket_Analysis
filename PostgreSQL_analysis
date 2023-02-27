@@ -1,5 +1,4 @@
 -- Jacksonville Housing Market Feb.2018 - Feb.2023--
--- Purpose: Generate insights into Jacksonville Housing Market with data from Redfin 
 -- Data was cleaned and prepared in Google Sheets, prior to downloading into PostgreSQL
 
 ##########################################################################
