@@ -2,6 +2,7 @@
 -- Purpose: Generate insights into Jacksonville Housing Market with data from Redfin 
 -- Data was cleaned and prepared in Google Sheets, prior to downloading into PostgreSQL
 
+##########################################################################
 
 --Creating Table 1: home_specs--
 DROP TABLE IF EXISTS home_specs;
@@ -46,14 +47,16 @@ ALTER COLUMN sale_price_sqft_price_ratio SET DATA TYPE numeric(6,4)
 ;
 
 --Successfully uploaded csv files for analysis-- 
-:)
 
-#####
-#####
+
+##########################################################################
+
 --Display of understanding of basic SQL concepts-- 
+
 --Commands are capitialized to display examples-- 
-#####
-#####
+
+##########################################################################
+
 
 --SELECT statement + LIMIT statement example-- 
 SELECT 
